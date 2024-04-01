@@ -1,0 +1,93 @@
+from random import random, uniform
+from flask import Flask, request, jsonify
+
+app = Flask(__name__)
+
+# Define an empty dictionary to store weather data
+weather_data = {}
+
+# Welcome message and documentation for the API
+@app.route('/')
+def index():
+    return """Welcome to the Weather API!
+    Endpoints:
+    - GET /weather?location=<location>: Get weather data for a specific location.
+    - POST /weather: Add new weather data for a location.
+    - PUT /weather/<location>: Update weather data for a location.
+    - DELETE /weather/<location>: Delete weather data for a location.
+    """
+
+# Route for getting weather data
+@app.route('/weather', methods=['GET'])
+def get_weather():
+    """Get weather data for a specific location."""
+    location = request.args.get('location')
+
+    if not location:
+        return jsonify({'error': 'Location parameter is required'}), 400
+
+    if location not in weather_data:
+        return jsonify({'error': f'Weather data for {location} not found'}), 404
+
+    return jsonify(weather_data[location]), 200
+
+# Route for adding weather data
+@app.route('/weather', methods=['POST'])
+def add_weather():
+    """Add new weather data for a location."""
+    data = request.json
+
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    location = data.get('location')
+    if not location:
+        return jsonify({'error': 'Location parameter is required'}), 400
+
+    weather_data[location] = generate_simulated_weather(location)
+
+    return jsonify({'message': 'Weather data added successfully'}), 201
+
+# Route for updating weather data
+@app.route('/weather/<location>', methods=['PUT'])
+def update_weather(location):
+    """Update weather data for a location."""
+    data = request.json
+
+    if not data:
+        return jsonify({'error': 'No data provided'}), 400
+
+    if location not in weather_data:
+        return jsonify({'error': f'Weather data for {location} not found'}), 404
+
+    weather_data[location].update(data)
+
+    return jsonify({'message': f'Weather data for {location} updated successfully'}), 200
+
+# Route for deleting weather data
+@app.route('/weather/<location>', methods=['DELETE'])
+def delete_weather(location):
+    """Delete weather data for a location."""
+    if location not in weather_data:
+        return jsonify({'error': f'Weather data for {location} not found'}), 404
+
+    del weather_data[location]
+
+    return jsonify({'message': f'Weather data for {location} deleted successfully'}), 204
+
+def generate_simulated_weather(location):
+    """Generate simulated weather data."""
+    # Example of generating simulated weather data
+    simulated_data = {
+        'location': location,
+        'temperature': round(uniform(-20, 40), 2),    # Temperature in Celsius
+        'dewPoint': round(uniform(-20, 40), 2),       # Dew Point in Celsius
+        'humidity': round(uniform(0, 100), 2),        # Humidity in percentage
+        'windSpeed': round(uniform(0, 30), 2),        # Wind Speed in km/h
+        'sunsetTime': '18:30',                        # Sunset Time (example format)
+        'moonPhase': 'Waning Gibbous'                 # Moon Phase (example)
+    }
+    return simulated_data
+
+if __name__ == '__main__':
+    app.run(debug=True)
